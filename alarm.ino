@@ -12,6 +12,8 @@ int alarmHour, alarmMin, state = 0, timeCounter = 0, threshold = 400;
 
 #define LIGHT 4
 #define LIGHT_BUTTON 5
+#define FAN 14
+#define FAN_BUTTON 12
 
 void setup() {
     Serial.begin(115200);
@@ -21,11 +23,14 @@ void setup() {
 
     pinMode(LIGHT, OUTPUT);
     pinMode(LIGHT_BUTTON, INPUT);
+    pinMode(FAN, OUTPUT);
+    pinMode(FAN_BUTTON, INPUT);
 }
 
 void loop() {
     server.handleClient();
-    checkState();
+    checkState(LIGHT_BUTTON, LIGHT);
+    checkState(FAN_BUTTON, FAN);
 } 
 
 
@@ -60,8 +65,12 @@ void setOn(){
         handleRoot();
     });
 
-    server.on("/toggle", []() {
-        toggle();
+    server.on("/toggleLight", []() {
+        toggle(LIGHT);
+        handleRoot();
+    });
+    server.on("/toggleFan", []() {
+        toggle(FAN);
         handleRoot();
     });
 }
@@ -74,8 +83,8 @@ void handleRoot() {
     mainpage += "<h1 id=\"header\">Jerome's Fan and Lights</h1>";
     mainpage += "</head>";
     mainpage += "<body>";
-    mainpage += "<button type=\"button\" class=\"button\" onclick=\"location.href='/toggle';\">Lights</button>";
-    mainpage += "<button type=\"button\" class=\"button\" onclick=\"location.href='/toggle';\">Fan</button>";
+    mainpage += "<button type=\"button\" class=\"button\" onclick=\"location.href='/toggleLight';\">Lights</button>";
+    mainpage += "<button type=\"button\" class=\"button\" onclick=\"location.href='/toggleFan';\">Fan</button>";
     mainpage += "<form action=\"input\">";
     mainpage += "<br>Set Wake Up Time<br>";
     mainpage += "<input type=\"time\" name=\"input\">";
@@ -123,20 +132,20 @@ void handleRoot() {
     server.send(200, "text/html", mainpage);
 }
 
-void checkState(){
-    if(digitalRead(LIGHT_BUTTON) == 0 && (millis() - timeCounter) > threshold){
-        toggle();
+void checkState(int checkPin, int togglePin){
+    if(digitalRead(checkPin) == 0 && (millis() - timeCounter) > threshold){
+        toggle(togglePin);
         timeCounter = millis();
     }
 }
 
-void toggle(){
+void toggle(int togglePin){
     if(state == 1){
-        digitalWrite(LIGHT, HIGH);
+        digitalWrite(togglePin, HIGH);
         state = 0;
     }
     else{
-        digitalWrite(LIGHT, LOW);
+        digitalWrite(togglePin, LOW);
         state = 1;
     }
 }
